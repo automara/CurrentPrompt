@@ -1,10 +1,8 @@
 import express from "express";
 import cors from "cors";
+import multer from "multer";
 import { config } from "dotenv";
 import modulesRouter from "./routes/modules.js";
-import webflowRouter from "./routes/webflow.js";
-import mcpRouter from "./routes/mcp.js";
-import webhooksRouter from "./routes/webhooks.js";
 
 config();
 
@@ -15,11 +13,14 @@ const PORT = process.env.API_PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Configure multer for file uploads
+const upload = multer({
+  dest: "uploads/",
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+});
+
 // Routes
 app.use("/api/modules", modulesRouter);
-app.use("/api/webflow", webflowRouter);
-app.use("/api/mcp", mcpRouter);
-app.use("/webhooks", webhooksRouter);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -30,11 +31,14 @@ app.get("/health", (req, res) => {
 app.get("/", (req, res) => {
   res.json({
     name: "CurrentPrompt API",
-    version: "0.1.0",
-    description: "A curated library of structured markdown knowledge modules",
+    version: "2.0.0",
+    description:
+      "Automated markdown module publishing system with Webflow CMS integration",
+    architecture: "Webflow-first",
     endpoints: {
       modules: "/api/modules",
-      search: "/api/modules/search?q=query",
+      upload: "/api/modules/upload",
+      sync: "/api/modules/sync/:id",
       health: "/health",
     },
   });
@@ -47,7 +51,8 @@ app.use((req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`✓ CurrentPrompt API running on http://localhost:${PORT}`);
+  console.log(`✓ CurrentPrompt API v2.0 running on http://localhost:${PORT}`);
+  console.log(`✓ Architecture: Webflow-first automation pipeline`);
   console.log(`✓ Environment: ${process.env.NODE_ENV || "development"}`);
 });
 
