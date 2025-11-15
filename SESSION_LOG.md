@@ -39,6 +39,56 @@ Use this file to track progress across sessions. Update after each work session!
 
 ---
 
+## Session 1.5: PRD Simplification & Refocus
+**Date:** 2025-11-15
+**Duration:** ~1 hour
+**Completed:** ✅
+
+### What Was Done
+- Evaluated existing codebase (Phase 1 & 2 complete)
+- Created simplified PRD v2.0 with Webflow-first architecture
+- Shifted focus from backend-first to automated ingestion pipeline
+- Documented new tech stack: Webflow, Supabase, Mastra, fal.ai, Railway
+- Defined 3-phase implementation plan
+- Created PR #1 for simplified PRD
+
+### Key Changes
+- **Architecture:** Backend-first API → Webflow-centric CMS
+- **Ingestion:** Manual uploads → Automated folder monitoring + Mastra cleaning
+- **Images:** Not planned → fal.ai auto-generation
+- **Scope:** 50+ modules → 20 personal modules (MVP)
+- **Deployment:** Generic Vercel → Railway (specified)
+
+### New Components Added to PRD
+1. Local folder monitoring (`~/CurrentPrompt/uploads/`)
+2. Mastra cleaning agent (metadata extraction, summary generation)
+3. fal.ai thumbnail generation
+4. Railway deployment specifications
+5. Future state features (PDF/link injection, chat search, MCP server)
+
+### Deliverables
+- ✅ Simplified PRD v2.0 (PRD.md)
+- ✅ PR #1 opened: https://github.com/automara/CurrentPrompt/pull/1
+- ✅ Updated development log (SESSION_LOG.md)
+
+### Data Flow Defined
+```
+Local Folder → Mastra → Supabase → fal.ai → Webflow
+```
+
+### Next Steps
+1. Review & approve PRD (✅ APPROVED)
+2. Set up Webflow site and collections
+3. Configure Railway project
+4. Build folder watcher script
+5. Test Mastra cleaning workflow
+6. Implement Phase 1: Core pipeline
+
+### Commits
+- `74bef6c`: feat: create simplified PRD v2.0 for CurrentPrompt
+
+---
+
 ## Session 2: Webflow Setup & Testing
 **Date:** [TO BE FILLED]
 **Duration:** [TO BE FILLED]
