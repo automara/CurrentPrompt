@@ -1,133 +1,201 @@
 # CurrentPrompt
 
-A curated library of structured markdown knowledge modules, accessible via web API, Webflow CMS, and MCP for LLM agents.
+**Version 2.0 - Webflow-First Architecture**
+
+Automated markdown module publishing system with Webflow CMS integration. Drop a markdown file in a folder, and it automatically appears on your Webflow site with professional thumbnails, summaries, and SEO metadata.
 
 ## 🚀 Quick Start
 
 ### Read First
+- **[PRD.md](./PRD.md)** - Product requirements (v2.0 Simplified)
 - **[CURRENT_STATUS.md](./CURRENT_STATUS.md)** - What's built, what's next
-- **[docs/README.md](./docs/README.md)** - Documentation index
 - **[PROJECT.md](./PROJECT.md)** - Full architecture and vision
 
-### Get the Server Running
+### Install & Run
 ```bash
 npm install
 npm run build
+
+# Start API server
 npm start
+
+# OR start folder watcher (monitors uploads/ for new .md files)
+npm run watch
 ```
 
 The API runs on `http://localhost:3000`
 
-### Next: Set Up Webflow
-Follow [docs/WEBFLOW_SETUP.md](./docs/WEBFLOW_SETUP.md) to configure your Webflow site.
-
 ## What is CurrentPrompt?
 
-CurrentPrompt is Keith's personal knowledge base of structured markdown modules. Each module includes:
-- Categorized content with tags and versioning
-- Full-text searchable metadata
-- Downloadable formats (full markdown, summary, ZIP)
-- Integration with Supabase (data), Webflow (website), and MCP (agents)
+CurrentPrompt is Keith's personal knowledge base - an automated publishing system that transforms local markdown files into a polished, Webflow-hosted library.
+
+### Core Features
+- **Automated ingestion** - Drop MD file → live on Webflow in minutes
+- **Professional presentation** - Auto-generated thumbnails (fal.ai)
+- **AI-powered metadata** - Auto-extracted summaries, tags, categories
+- **Multiple formats** - Full MD, summary MD, ZIP downloads
+- **Version history** - Track changes over time
+- **Source attribution** - Proper credit for adapted content
 
 ## 📊 Current Status
 
-✅ **Phases 1 & 2 Complete**
-- Express API with 12+ endpoints
-- Supabase database fully configured
-- Webflow CMS sync service ready
-- MCP server for agent integration
-- Sample data and documentation
+✅ **v2.0 Refactor Complete**
+- Webflow-first architecture implemented
+- File upload endpoint with multer
+- Folder watcher service (chokidar)
+- Ingestion pipeline with Mastra stub
+- fal.ai thumbnail generation service
+- Updated database schema
 
-🔄 **Phase 3 In Progress**
-- File upload endpoint (coming next)
-- Mastra ingestion workflow (coming next)
-- Auto-sync on create/update (coming next)
+🔄 **Phase 1 In Progress**
+- Test upload workflow
+- Configure Webflow collections
+- Deploy to Railway
+- Publish first 20 modules
 
 ## 📚 Documentation
 
 | Topic | Link |
 |-------|------|
-| Project Overview | [PROJECT.md](./PROJECT.md) |
 | Product Requirements | [PRD.md](./PRD.md) |
 | Current Status | [CURRENT_STATUS.md](./CURRENT_STATUS.md) |
-| Setup Guides | [docs/](./docs/) |
+| Project Overview | [PROJECT.md](./PROJECT.md) |
 | Webflow Configuration | [docs/WEBFLOW_SETUP.md](./docs/WEBFLOW_SETUP.md) |
-| Testing Workflow | [docs/TESTING_GUIDE.md](./docs/TESTING_GUIDE.md) |
-| MCP Integration | [docs/MCP_GUIDE.md](./docs/MCP_GUIDE.md) |
 | Sample Data | [data/](./data/) |
 
 ## 🔗 Key Endpoints
 
-### Module Management
+### Upload & Sync
 ```
-GET    /api/modules              # List all published modules
-POST   /api/modules              # Create new module
-GET    /api/modules/:slug        # Get specific module
-PUT    /api/modules/:id          # Update module
-DELETE /api/modules/:id          # Delete module
-GET    /api/modules/search       # Full-text search
+POST   /api/modules/upload        # Upload markdown file
+POST   /api/modules/sync/:id      # Sync module to Webflow
+POST   /api/modules/sync-all      # Sync all modules
 ```
 
-### Webflow Sync
+### Module Access
 ```
-POST   /api/webflow/sync/:id     # Sync module to Webflow
-POST   /api/webflow/sync-all     # Sync all modules
-DELETE /api/webflow/delete/:slug # Remove from Webflow
+GET    /api/modules               # List all published modules
+GET    /api/modules/:slug         # Get specific module
 ```
 
-### MCP (Agents)
+### System
 ```
-GET    /api/mcp/modules          # List for agents
-GET    /api/mcp/search           # Agent search
-GET    /api/mcp/modules/:slug/content  # Get markdown
-GET    /api/mcp/categories       # List categories
-GET    /api/mcp/stats            # Statistics
+GET    /health                    # Health check
+GET    /                          # API info
 ```
 
 ## 🛠️ Tech Stack
 
+- **Frontend/CMS:** Webflow (primary interface)
 - **Backend:** Node.js + Express + TypeScript
 - **Database:** Supabase (PostgreSQL)
 - **Storage:** Supabase Storage (S3-backed)
-- **CMS:** Webflow
-- **Search:** PostgreSQL tsvector (full-text) + pgvector (semantic, future)
-- **Agents:** MCP protocol for Claude & other LLMs
+- **Ingestion:** Mastra agents (content cleaning)
+- **Images:** fal.ai (thumbnail generation)
+- **File Watching:** chokidar
+- **Deployment:** Railway
+
+## 🔄 Data Flow
+
+```
+Local Folder (~/uploads/*.md)
+    ↓
+Folder Watcher (chokidar)
+    ↓
+Ingestion Service (Mastra cleaning)
+    ↓
+Supabase (database + storage)
+    ↓
+fal.ai (thumbnail generation)
+    ↓
+REST API (sync)
+    ↓
+Webflow CMS (published module)
+```
 
 ## 📖 How to Use
 
-### For Website Builders
-1. Set up Webflow site (see docs/WEBFLOW_SETUP.md)
-2. Import sample CSV data
-3. Test sync with API
+### 1. Setup Environment
 
-### For Developers
-1. Clone repo and run `npm install`
-2. Configure Supabase credentials in `.env`
-3. Run `npm start` to begin API development
-4. See docs/TESTING_GUIDE.md for complete workflow
+Create a `.env` file:
 
-### For Agents/LLMs
-1. Use MCP endpoints at /api/mcp/
-2. Query modules via search or category/tag
-3. Load content for context
-4. See docs/MCP_GUIDE.md for examples
+```bash
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-## ✅ What's Ready
+# Webflow (optional)
+WEBFLOW_API_TOKEN=your_token
+WEBFLOW_SITE_ID=your_site_id
+WEBFLOW_COLLECTION_ID=your_collection_id
 
-- [x] Supabase database schema
-- [x] Express API (12+ endpoints)
-- [x] Webflow CMS sync service
-- [x] Full-text search
-- [x] MCP server for agents
-- [x] Sample CSV data
-- [x] Comprehensive documentation
-- [ ] File upload endpoint (Phase 3)
-- [ ] Mastra ingestion workflow (Phase 3)
-- [ ] Semantic search (Phase 4)
+# fal.ai (optional, for thumbnails)
+FAL_API_KEY=your_fal_key
+
+# Folder watcher
+WATCH_FOLDER=./uploads
+```
+
+### 2. Run Database Migrations
+
+Run the SQL migrations in your Supabase project:
+- `migrations/001_create_schema.sql`
+- `migrations/002_add_prd_fields.sql`
+
+### 3. Start the Services
+
+**Option A: API Server** (manual uploads via HTTP)
+```bash
+npm start
+```
+
+**Option B: Folder Watcher** (auto-process new files)
+```bash
+npm run watch
+```
+
+### 4. Upload Modules
+
+**Via Folder Watcher:**
+```bash
+# Drop a markdown file in the uploads folder
+cp my-module.md uploads/
+# Watcher automatically processes it
+```
+
+**Via API:**
+```bash
+curl -X POST http://localhost:3000/api/modules/upload \
+  -F "file=@my-module.md"
+```
+
+## ✅ What's Ready (v2.0)
+
+- [x] Webflow-first architecture
+- [x] File upload endpoint
+- [x] Folder watcher service
+- [x] Ingestion pipeline (stub)
+- [x] fal.ai thumbnail service
+- [x] Database schema (PRD v2.0)
+- [x] Webflow sync endpoints
+- [ ] Mastra agent integration (stub only)
+- [ ] Production deployment
+- [ ] Initial 20 modules published
+
+## 🗂️ Archived Features
+
+The following features were moved to `archive/` for future implementation:
+
+- **MCP server** - Agent integration (Phase 4+)
+- **Advanced search endpoints** - Category/tag filtering
+- **Manual CRUD endpoints** - Focus on automated ingestion
+
+These may be re-introduced in future phases.
 
 ## 🤝 Contributing
 
-This is Keith's personal project. See [PROJECT.md](./PROJECT.md) for architecture decisions and contact info.
+This is Keith's personal project. For questions or issues, see the GitHub repository.
 
 ## 📝 License
 
@@ -135,4 +203,4 @@ MIT
 
 ---
 
-**Questions?** See [docs/README.md](./docs/README.md) for help finding the right guide.
+**Questions?** See [PRD.md](./PRD.md) for detailed architecture and implementation plan.

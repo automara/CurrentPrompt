@@ -23,10 +23,13 @@ export interface Module {
   category: string;
   tags: string[];
   summary?: string;
+  meta_description?: string;
   source_url?: string;
   source_label?: string;
+  owner: string;
   latest_version: number;
   status: "draft" | "published" | "archived";
+  webflow_id?: string;
   search_text?: string;
   created_at: string;
   updated_at: string;
@@ -41,6 +44,7 @@ export interface ModuleVersion {
     full_md?: string;
     summary_md?: string;
     bundle_zip?: string;
+    thumbnail?: string;
   };
   created_at: string;
 }
