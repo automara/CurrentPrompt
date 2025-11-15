@@ -3,6 +3,7 @@ import cors from "cors";
 import { config } from "dotenv";
 import modulesRouter from "./routes/modules.js";
 import webflowRouter from "./routes/webflow.js";
+import mcpRouter from "./routes/mcp.js";
 
 config();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 // Routes
 app.use("/api/modules", modulesRouter);
 app.use("/api/webflow", webflowRouter);
+app.use("/api/mcp", mcpRouter);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
