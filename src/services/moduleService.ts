@@ -13,7 +13,9 @@ export async function createModule(
   summary?: string,
   sourceUrl?: string,
   sourceLabel?: string,
-  status: "draft" | "published" | "archived" = "draft"
+  status: "draft" | "published" | "archived" = "draft",
+  owner: string = "Keith Armstrong",
+  metaDescription?: string
 ): Promise<Module | null> {
   try {
     const { data, error } = await supabase
@@ -25,8 +27,10 @@ export async function createModule(
           category,
           tags,
           summary,
+          meta_description: metaDescription,
           source_url: sourceUrl,
           source_label: sourceLabel,
+          owner,
           latest_version: 1,
           status,
         },
@@ -210,6 +214,7 @@ export async function createModuleVersion(
     full_md?: string;
     summary_md?: string;
     bundle_zip?: string;
+    thumbnail?: string;
   }
 ): Promise<ModuleVersion | null> {
   try {
@@ -224,6 +229,7 @@ export async function createModuleVersion(
             full_md: "",
             summary_md: "",
             bundle_zip: "",
+            thumbnail: "",
           },
         },
       ])
