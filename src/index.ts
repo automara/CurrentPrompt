@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { config } from "dotenv";
 import modulesRouter from "./routes/modules.js";
+import webflowRouter from "./routes/webflow.js";
 
 config();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/modules", modulesRouter);
+app.use("/api/webflow", webflowRouter);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
