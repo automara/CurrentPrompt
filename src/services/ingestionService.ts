@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { createModule, createModuleVersion } from "./moduleService.js";
 import { generateThumbnail } from "./thumbnailService.js";
-import { syncModuleToWebflow } from "./webflowService.js";
+import { syncModuleToWebflowV2 } from "./webflowV2Service.js";
 
 /**
  * Ingestion Service - Process uploaded markdown files through the pipeline
@@ -79,7 +79,7 @@ export async function processMarkdownFile(
 
     // Step 7: Sync to Webflow (if enabled)
     if (autoSync) {
-      const synced = await syncModuleToWebflow(module);
+      const synced = await syncModuleToWebflowV2(module);
       if (synced) {
         console.log(`✓ Module synced to Webflow`);
       } else {
