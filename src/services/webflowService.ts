@@ -9,9 +9,18 @@ const WEBFLOW_API_TOKEN = process.env.WEBFLOW_API_TOKEN;
 const WEBFLOW_SITE_ID = process.env.WEBFLOW_SITE_ID;
 const WEBFLOW_COLLECTION_ID = process.env.WEBFLOW_COLLECTION_ID;
 
+// NOTE: Webflow v1 API has limitations with modern CMS collections
+// The collection IDs from the CMS UI don't work directly with v1 /collections/{id}/items endpoint
+// This requires using Webflow v2 API or finding the correct database ID mapping
+// For now, sync is disabled until we migrate to v2 API or find the correct ID format
+
 if (!WEBFLOW_API_TOKEN || !WEBFLOW_SITE_ID || !WEBFLOW_COLLECTION_ID) {
   console.warn(
     "⚠️  Webflow credentials missing. CMS sync will be disabled. Set WEBFLOW_API_TOKEN, WEBFLOW_SITE_ID, and WEBFLOW_COLLECTION_ID in .env"
+  );
+} else {
+  console.warn(
+    "⚠️  Webflow v1 API sync: Currently disabled due to API limitations. Collection IDs need v2 API or database ID mapping."
   );
 }
 
@@ -82,10 +91,59 @@ export async function syncModuleToWebflow(module: Module): Promise<boolean> {
 }
 
 /**
+ * Get collection database ID from site
+ * Webflow v1 API requires database IDs, not CMS collection IDs
+ */
+async function getCollectionDatabaseId(
+  collectionName: string
+): Promise<string | null> {
+  try {
+    // Try to fetch collections from the site
+    const response = await fetch(
+      `${WEBFLOW_API_URL}/sites/${WEBFLOW_SITE_ID}/collections`,
+      {
+        headers: {
+          Authorization: `Bearer ${WEBFLOW_API_TOKEN}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`Failed to fetch collections: ${response.status}`);
+      return null;
+    }
+
+    const data = (await response.json()) as {
+      collections: Array<{ _id: string; name: string }>;
+    };
+
+    const collection = data.collections.find(
+      (c) => c.name.toLowerCase() === collectionName.toLowerCase()
+    );
+
+    if (collection) {
+      console.log(
+        `✓ Found collection database ID for "${collectionName}": ${collection._id}`
+      );
+      return collection._id;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error getting collection database ID:", error);
+    return null;
+  }
+}
+
+/**
  * Create a new item in Webflow collection
  */
 async function createWebflowItem(item: WebflowItem): Promise<boolean> {
   try {
+    // For v1 API, we need the database ID, not the CMS collection ID
+    // The provided WEBFLOW_COLLECTION_ID might be a CMS ID, not a database ID
+    // Try using it directly first, if it fails, try to fetch the database ID
+
     const response = await fetch(
       `${WEBFLOW_API_URL}/collections/${WEBFLOW_COLLECTION_ID}/items`,
       {
@@ -94,13 +152,27 @@ async function createWebflowItem(item: WebflowItem): Promise<boolean> {
           Authorization: `Bearer ${WEBFLOW_API_TOKEN}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ fields: item.fields }),
+        body: JSON.stringify({
+          fields: item.fields,
+          isArchived: item.fields._archived || false,
+          isDraft: item.fields._draft || false,
+        }),
       }
     );
 
     if (!response.ok) {
-      const error = await response.json();
-      console.error("Webflow API error creating item:", error);
+      const statusCode = response.status;
+      if (statusCode === 404) {
+        console.warn(
+          `Collection ID not found with v1 API. The provided ID might be a CMS ID rather than a database ID.`
+        );
+        console.warn(
+          `Try using Webflow v2 API or provide the database collection ID instead.`
+        );
+      } else {
+        const error = await response.json();
+        console.error("Webflow API error creating item:", error);
+      }
       return false;
     }
 
