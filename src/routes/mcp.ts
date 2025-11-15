@@ -242,4 +242,199 @@ router.get("/stats", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * WEBFLOW ENDPOINTS
+ * =================
+ */
+
+/**
+ * GET /api/mcp/webflow/modules
+ * List all modules from Webflow CMS
+ */
+router.get("/webflow/modules", async (req: Request, res: Response) => {
+  try {
+    const modules = await mcpServer.listWebflowModules();
+    res.json({
+      success: true,
+      data: modules,
+      count: modules.length,
+      source: "webflow",
+    });
+  } catch (error) {
+    console.error("Error listing Webflow modules:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to list Webflow modules" });
+  }
+});
+
+/**
+ * GET /api/mcp/webflow/modules/:slug
+ * Get module from Webflow CMS by slug
+ */
+router.get("/webflow/modules/:slug", async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params;
+    const module = await mcpServer.getWebflowModule(slug);
+
+    if (!module) {
+      return res.status(404).json({
+        success: false,
+        error: "Module not found in Webflow",
+      });
+    }
+
+    res.json({ success: true, data: module, source: "webflow" });
+  } catch (error) {
+    console.error("Error fetching Webflow module:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch Webflow module",
+    });
+  }
+});
+
+/**
+ * GET /api/mcp/webflow/search
+ * Search modules in Webflow CMS
+ */
+router.get("/webflow/search", async (req: Request, res: Response) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || typeof q !== "string") {
+      return res.status(400).json({
+        success: false,
+        error: "Query parameter 'q' is required",
+      });
+    }
+
+    const results = await mcpServer.searchWebflowModules(q);
+    res.json({
+      success: true,
+      query: q,
+      data: results,
+      count: results.length,
+      source: "webflow",
+    });
+  } catch (error) {
+    console.error("Error searching Webflow modules:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to search Webflow modules",
+    });
+  }
+});
+
+/**
+ * GET /api/mcp/webflow/categories
+ * Get categories from Webflow CMS
+ */
+router.get("/webflow/categories", async (req: Request, res: Response) => {
+  try {
+    const categories = await mcpServer.getWebflowCategories();
+    res.json({
+      success: true,
+      data: categories,
+      count: categories.length,
+      source: "webflow",
+    });
+  } catch (error) {
+    console.error("Error fetching Webflow categories:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch Webflow categories",
+    });
+  }
+});
+
+/**
+ * GET /api/mcp/webflow/tags
+ * Get tags from Webflow CMS
+ */
+router.get("/webflow/tags", async (req: Request, res: Response) => {
+  try {
+    const tags = await mcpServer.getWebflowTags();
+    res.json({
+      success: true,
+      data: tags,
+      count: tags.length,
+      source: "webflow",
+    });
+  } catch (error) {
+    console.error("Error fetching Webflow tags:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch Webflow tags",
+    });
+  }
+});
+
+/**
+ * POST /api/mcp/webflow/sync/pull
+ * Sync from Webflow → Supabase
+ */
+router.post("/webflow/sync/pull", async (req: Request, res: Response) => {
+  try {
+    const result = await mcpServer.syncWebflowToSupabase();
+    res.json({
+      success: result.success,
+      data: result.result,
+      direction: "pull",
+    });
+  } catch (error) {
+    console.error("Error syncing from Webflow:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to sync from Webflow",
+    });
+  }
+});
+
+/**
+ * POST /api/mcp/webflow/sync/push
+ * Sync from Supabase → Webflow
+ */
+router.post("/webflow/sync/push", async (req: Request, res: Response) => {
+  try {
+    const result = await mcpServer.syncSupabaseToWebflow();
+    res.json({
+      success: result.success,
+      data: result.result,
+      direction: "push",
+    });
+  } catch (error) {
+    console.error("Error syncing to Webflow:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to sync to Webflow",
+    });
+  }
+});
+
+/**
+ * GET /api/mcp/webflow/sync-status/:slug
+ * Get sync status for a specific module
+ */
+router.get(
+  "/webflow/sync-status/:slug",
+  async (req: Request, res: Response) => {
+    try {
+      const { slug } = req.params;
+      const status = await mcpServer.getSyncStatus(slug);
+
+      res.json({
+        success: true,
+        data: status,
+      });
+    } catch (error) {
+      console.error("Error getting sync status:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to get sync status",
+      });
+    }
+  }
+);
+
 export default router;

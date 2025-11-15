@@ -9,22 +9,35 @@ This guide walks through setting up a Webflow site for CurrentPrompt with CMS co
 3. Choose a template or start blank
 4. Design your homepage (basic structure is fine for now)
 
-## Step 2: Create CMS Collection for Modules
+## Step 2: Create CMS Collections
 
-1. In Webflow Editor, go to **CMS** (left panel)
-2. Click **Create Collection**
-3. Name it: `modules`
-4. Add the following fields:
+For a proper relational structure, create **3 collections** (not just one):
 
-### Collection Fields
+1. **categories** - Reference data for categorizing modules
+2. **tags** - Reference data for tagging modules
+3. **modules** - Main collection with references to categories & tags
+
+### Detailed Schema Setup
+
+See **[WEBFLOW_CMS_SCHEMA.md](./WEBFLOW_CMS_SCHEMA.md)** for complete step-by-step instructions.
+
+Quick summary:
+
+| Collection | Purpose | Items |
+|-----------|---------|-------|
+| categories | Module categories (reference field) | 6 items (Prompting, Research, Writing, etc.) |
+| tags | Module tags (multi-reference field) | 18 items (Templates, System, Framework, etc.) |
+| modules | Main modules with references | 10+ items |
+
+### Collection Fields for Modules
 
 | Field Name | Type | Notes |
 |-----------|------|-------|
 | `Name` | Text | Module title (auto-created) |
 | `Slug` | Slug | URL-friendly ID (auto-created) |
-| `Summary` | Rich Text or Text | One-line description |
-| `Category` | Text | e.g., "prompting", "system-design" |
-| `Tags` | Text | Comma-separated tags |
+| `Summary` | Rich Text | One-line description |
+| `Category` | **Reference** | Link to categories collection |
+| `Tags` | **Multi-reference** | Link to tags collection |
 | `Latest Version` | Number | Current version number |
 | `Status` | Text | "draft", "published", or "archived" |
 | `Source URL` | Link | Attribution link |

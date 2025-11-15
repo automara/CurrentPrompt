@@ -4,6 +4,7 @@ import { config } from "dotenv";
 import modulesRouter from "./routes/modules.js";
 import webflowRouter from "./routes/webflow.js";
 import mcpRouter from "./routes/mcp.js";
+import webhooksRouter from "./routes/webhooks.js";
 
 config();
 
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use("/api/modules", modulesRouter);
 app.use("/api/webflow", webflowRouter);
 app.use("/api/mcp", mcpRouter);
+app.use("/webhooks", webhooksRouter);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

@@ -12,6 +12,8 @@
 
 import { supabase, Module, ModuleVersion } from "../lib/supabase.js";
 import * as moduleService from "../services/moduleService.js";
+import * as webflowDataService from "../services/webflowDataService.js";
+import * as syncService from "../services/syncService.js";
 
 /**
  * Get list of all published modules for MCP
@@ -209,6 +211,129 @@ export async function getStats(): Promise<{
       draftModules: 0,
       categories: 0,
       totalVersions: 0,
+    };
+  }
+}
+
+/**
+ * WEBFLOW INTEGRATION FUNCTIONS
+ * ==============================
+ */
+
+/**
+ * Get list of all modules from Webflow CMS
+ */
+export async function listWebflowModules(): Promise<Module[]> {
+  try {
+    return await webflowDataService.getWebflowModules();
+  } catch (error) {
+    console.error("Error listing Webflow modules:", error);
+    return [];
+  }
+}
+
+/**
+ * Get module from Webflow CMS by slug
+ */
+export async function getWebflowModule(slug: string): Promise<Module | null> {
+  try {
+    return await webflowDataService.getWebflowModule(slug);
+  } catch (error) {
+    console.error("Error fetching Webflow module:", error);
+    return null;
+  }
+}
+
+/**
+ * Search modules in Webflow CMS
+ */
+export async function searchWebflowModules(query: string): Promise<Module[]> {
+  try {
+    return await webflowDataService.searchWebflowModules(query);
+  } catch (error) {
+    console.error("Error searching Webflow modules:", error);
+    return [];
+  }
+}
+
+/**
+ * Get categories from Webflow
+ */
+export async function getWebflowCategories(): Promise<string[]> {
+  try {
+    const categories = await webflowDataService.getWebflowCategories();
+    return categories.map((c) => c.name).sort();
+  } catch (error) {
+    console.error("Error fetching Webflow categories:", error);
+    return [];
+  }
+}
+
+/**
+ * Get tags from Webflow
+ */
+export async function getWebflowTags(): Promise<string[]> {
+  try {
+    const tags = await webflowDataService.getWebflowTags();
+    return tags.map((t) => t.name).sort();
+  } catch (error) {
+    console.error("Error fetching Webflow tags:", error);
+    return [];
+  }
+}
+
+/**
+ * Trigger Webflow → Supabase sync (pull)
+ */
+export async function syncWebflowToSupabase(): Promise<{
+  success: boolean;
+  result: any;
+}> {
+  try {
+    const result = await syncService.syncWebflowToSupabase();
+    return { success: true, result };
+  } catch (error) {
+    console.error("Error syncing from Webflow:", error);
+    return { success: false, result: null };
+  }
+}
+
+/**
+ * Trigger Supabase → Webflow sync (push)
+ */
+export async function syncSupabaseToWebflow(): Promise<{
+  success: boolean;
+  result: any;
+}> {
+  try {
+    const result = await syncService.syncSupabaseToWebflow();
+    return { success: true, result };
+  } catch (error) {
+    console.error("Error syncing to Webflow:", error);
+    return { success: false, result: null };
+  }
+}
+
+/**
+ * Get sync status for a module
+ */
+export async function getSyncStatus(slug: string): Promise<{
+  slug: string;
+  inSupabase: boolean;
+  inWebflow: boolean;
+  needsSync: boolean;
+  direction?: string;
+}> {
+  try {
+    const status = await syncService.getSyncStatus(slug);
+    return status;
+  } catch (error) {
+    console.error("Error getting sync status:", error);
+    return {
+      slug,
+      inSupabase: false,
+      inWebflow: false,
+      needsSync: false,
     };
   }
 }
