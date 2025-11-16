@@ -33,6 +33,16 @@ export interface Module {
   search_text?: string;
   created_at: string;
   updated_at: string;
+  // Agent-generated fields
+  schema_json?: object;
+  quality_score?: number;
+  validation_report?: string;
+  meta_title?: string;
+  seo_keywords?: string[];
+  summary_short?: string;
+  summary_medium?: string;
+  summary_long?: string;
+  image_prompt?: string;
 }
 
 export interface ModuleVersion {
