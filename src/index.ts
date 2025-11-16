@@ -3,6 +3,7 @@ import cors from "cors";
 import multer from "multer";
 import { config } from "dotenv";
 import modulesRouter from "./routes/modules.js";
+import testAgentsRouter from "./routes/test-agents.js";
 import { initializeStorageBucket } from "./services/storageService.js";
 
 config();
@@ -22,6 +23,7 @@ const upload = multer({
 
 // Routes
 app.use("/api/modules", modulesRouter);
+app.use("/api", testAgentsRouter);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -40,6 +42,8 @@ app.get("/", (req, res) => {
       modules: "/api/modules",
       upload: "/api/modules/upload",
       sync: "/api/modules/sync/:id",
+      testAgents: "/api/test-agents",
+      agentHealth: "/api/test-agents/health",
       health: "/health",
     },
   });
