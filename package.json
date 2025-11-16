@@ -27,6 +27,9 @@
   ],
   "author": "Keith Armstrong",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.67",
     "@mastra/core": "^0.24.1",
