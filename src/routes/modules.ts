@@ -3,6 +3,14 @@ import multer from "multer";
 import * as moduleService from "../services/moduleService.js";
 import { processMarkdownFile, processMarkdownContent } from "../services/ingestionService.js";
 import { syncModuleToWebflow } from "../services/webflowService.js";
+import { requireAuth, optionalAuth } from "../middleware/auth.js";
+import {
+  createModuleLimiter,
+  uploadLimiter,
+  syncLimiter,
+} from "../middleware/rateLimit.js";
+import { validateBody, createModuleSchema } from "../middleware/validation.js";
+import { sanitizeMarkdown } from "../utils/sanitize.js";
 
 const router = Router();
 
@@ -22,50 +30,61 @@ const upload = multer({
 /**
  * POST /api/modules/create
  * Create a module from JSON with markdown content (recommended)
+ *
+ * Security: Rate limited, input validated, content sanitized
  */
-router.post("/create", async (req: Request, res: Response) => {
-  try {
-    const { title, content, description, tags, autoSync = true } = req.body;
+router.post(
+  "/create",
+  createModuleLimiter,
+  optionalAuth,
+  validateBody(createModuleSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const { title, content, autoSync } = req.body;
 
-    // Validation
-    if (!content || typeof content !== "string") {
-      return res.status(400).json({
-        success: false,
-        error: "Missing required field: content (markdown string)",
-      });
-    }
+      // Sanitize markdown content to prevent XSS
+      const sanitizedContent = sanitizeMarkdown(content);
 
-    // Process the markdown content
-    const result = await processMarkdownContent(content, title, autoSync);
+      // Process the markdown content
+      const result = await processMarkdownContent(
+        sanitizedContent,
+        title,
+        autoSync
+      );
 
-    if (result.success) {
-      res.json({
-        success: true,
-        message: "Module created and processed successfully",
-        moduleId: result.moduleId,
-      });
-    } else {
+      if (result.success) {
+        res.json({
+          success: true,
+          message: "Module created and processed successfully",
+          moduleId: result.moduleId,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: result.error || "Failed to process module",
+        });
+      }
+    } catch (error) {
+      console.error("Error creating module:", error);
       res.status(500).json({
         success: false,
-        error: result.error || "Failed to process module",
+        error: "Failed to create module",
       });
     }
-  } catch (error) {
-    console.error("Error creating module:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to create module",
-    });
   }
-});
+);
 
 /**
  * POST /api/modules/upload
  * Upload a markdown file and process through the pipeline
  * @deprecated Use POST /api/modules/create with JSON body instead
+ *
+ * Security: Rate limited, requires authentication
  */
 router.post(
   "/upload",
+  uploadLimiter,
+  optionalAuth,
   upload.single("file"),
   async (req: Request, res: Response) => {
     try {
@@ -105,8 +124,14 @@ router.post(
 /**
  * POST /api/modules/sync/:id
  * Manually sync a specific module to Webflow
+ *
+ * Security: Rate limited, requires authentication
  */
-router.post("/sync/:id", async (req: Request, res: Response) => {
+router.post(
+  "/sync/:id",
+  syncLimiter,
+  optionalAuth,
+  async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const module = await moduleService.getModuleById(id);
@@ -143,8 +168,14 @@ router.post("/sync/:id", async (req: Request, res: Response) => {
 /**
  * POST /api/modules/sync-all
  * Sync all published modules to Webflow
+ *
+ * Security: Rate limited, requires authentication
  */
-router.post("/sync-all", async (req: Request, res: Response) => {
+router.post(
+  "/sync-all",
+  syncLimiter,
+  optionalAuth,
+  async (req: Request, res: Response) => {
   try {
     const modules = await moduleService.getAllPublishedModules();
 
