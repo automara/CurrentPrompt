@@ -1,10 +1,10 @@
 import fs from "fs/promises";
 import path from "path";
-import { createModule, createModuleVersion } from "./moduleService.js";
+import { createModule, createModuleVersion, createModuleEmbedding } from "./moduleService.js";
 import { generateThumbnail } from "./thumbnailService.js";
 import { syncModuleToWebflowV2 } from "./webflowV2Service.js";
-import { generateContentMetadata, generateSummaryMarkdown } from "./mastraService.js";
 import { uploadModuleFiles } from "./storageService.js";
+import { executeAgentWorkflow } from "../agents/coordinator.js";
 
 /**
  * Ingestion Service - Process uploaded markdown files through the pipeline
@@ -36,10 +36,11 @@ export async function processMarkdownFile(
     // Step 1: Read the file
     const content = await fs.readFile(filePath, "utf-8");
 
-    // Step 2: Clean and extract metadata with Mastra
+    // Step 2: Clean and extract metadata with AI Agents
     const processed = await cleanAndExtractMetadata(content, filePath);
+    const { agentResults } = processed;
 
-    // Step 3: Create module in Supabase
+    // Step 3: Create module in Supabase with all agent-generated fields
     const module = await createModule(
       processed.title,
       processed.slug,
@@ -48,17 +49,36 @@ export async function processMarkdownFile(
       processed.summary,
       undefined, // sourceUrl
       undefined, // sourceLabel
-      "published" // status
+      "draft", // status - start as draft per requirements
+      {
+        // New agent-generated fields
+        meta_title: agentResults.seo.metaTitle,
+        meta_description: agentResults.seo.metaDescription,
+        seo_keywords: agentResults.seo.seoKeywords,
+        summary_short: agentResults.summary.summaryShort,
+        summary_medium: agentResults.summary.summaryMedium,
+        summary_long: agentResults.summary.summaryLong,
+        image_prompt: agentResults.imagePrompt.imagePrompt,
+        schema_json: agentResults.schema.schemaJson,
+        quality_score: agentResults.validation.qualityScore,
+        validation_report: agentResults.validation.validationReport
+      }
     );
 
     if (!module) {
       throw new Error("Failed to create module in database");
     }
 
-    console.log(`✓ Module created: ${module.id}`);
+    console.log(`✓ Module created: ${module.id} (quality: ${agentResults.validation.qualityScore}/100)`);
 
-    // Step 4: Generate summary markdown
-    const summaryContent = await generateSummaryMarkdown(processed.content);
+    // Step 3b: Store embeddings if generated
+    if (agentResults.embeddings.embedding.length > 0) {
+      await createModuleEmbedding(module.id, agentResults.embeddings.embedding);
+      console.log(`✓ Embeddings stored (${agentResults.embeddings.embedding.length} dimensions)`);
+    }
+
+    // Step 4: Use agent-generated summary markdown
+    const summaryContent = agentResults.summary.summaryMarkdown;
 
     // Step 5: Upload files to Supabase Storage
     const filePaths = await uploadModuleFiles(
@@ -108,12 +128,12 @@ export async function processMarkdownFile(
 }
 
 /**
- * Clean markdown and extract metadata using Mastra agent
+ * Clean markdown and extract metadata using specialized agent workflow
  */
 async function cleanAndExtractMetadata(
   content: string,
   filePath: string
-): Promise<ProcessedModule> {
+): Promise<ProcessedModule & { agentResults: any }> {
   const filename = path.basename(filePath, ".md");
   const lines = content.split("\n");
 
@@ -128,28 +148,32 @@ async function cleanAndExtractMetadata(
     initialTitle = firstH1.replace("# ", "").trim();
   }
 
-  console.log(`🤖 Using Mastra to generate metadata for: ${initialTitle}`);
+  console.log(`🤖 Using AI Agent Workflow to process: ${initialTitle}`);
 
-  // Use Mastra to generate all metadata
-  const metadata = await generateContentMetadata(initialTitle, content);
+  // Execute complete agent workflow
+  const agentResults = await executeAgentWorkflow({
+    title: initialTitle,
+    content
+  });
 
-  // Generate slug from final title
-  const slug = metadata.title
+  // Generate slug from final title (use initial title if no refinement)
+  const slug = initialTitle
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-  console.log(`✓ Mastra generated: ${metadata.tags.length} tags, category: ${metadata.category}`);
+  console.log(`✓ Agent workflow complete: Quality score ${agentResults.validation.qualityScore}/100`);
 
   return {
-    title: metadata.title,
+    title: initialTitle,
     slug,
-    category: metadata.category,
-    tags: metadata.tags,
-    summary: metadata.summary,
-    metaDescription: metadata.metaDescription,
+    category: agentResults.category.category,
+    tags: agentResults.tags.tags,
+    summary: agentResults.summary.summaryShort,
+    metaDescription: agentResults.seo.metaDescription,
     changelog: "Initial version",
     content,
+    agentResults
   };
 }
 

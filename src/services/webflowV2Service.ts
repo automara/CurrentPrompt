@@ -47,15 +47,11 @@ export async function syncModuleToWebflowV2(module: Module): Promise<boolean> {
 
 /**
  * Build Webflow item data from module
- * Note: category and tags are omitted for now - they can be added as semicolon-separated names
- * Example: category: "Dev Tool" or tags: "ai; claude; productivity"
- * status is mapped to Webflow option IDs
+ * Includes all agent-generated metadata and schema
  */
 async function buildWebflowItemData(module: Module) {
-  // Map status to Webflow option IDs
-  const statusId = module.status === "published"
-    ? "ee61f17366fc7f58f282042e1bf44125"
-    : "e9c64fa914d619f54a019c8fb7463f83";
+  // Always send as draft status (per requirements)
+  const draftStatusId = "e9c64fa914d619f54a019c8fb7463f83";
 
   // Get latest version file paths from database
   const latestVersion = await getLatestModuleVersion(module.id);
@@ -66,17 +62,26 @@ async function buildWebflowItemData(module: Module) {
       name: module.title,
       slug: module.slug,
       summary: module.summary || "",
-      // category: module.category, // TODO: Uncomment when ready - format: "Category Name"
-      // tags: module.tags.join("; "), // TODO: Uncomment when ready - format: "tag1; tag2; tag3"
+      category: module.category,
+      tags: module.tags.join("; "), // Semicolon-separated format
       "latest-version": module.latest_version,
-      status: statusId,
+      status: draftStatusId, // Always draft status
       "source-url": module.source_url || "",
       "source-label": module.source_label || "",
       "supabase-id": module.id,
-      // owner field doesn't exist in Webflow schema
       "download-link-full": filePaths.full_md || getFileUrl(module.slug, module.latest_version, "full.md"),
       "download-link-summary": filePaths.summary_md || getFileUrl(module.slug, module.latest_version, "summary.md"),
       "download-link-bundle": filePaths.bundle_zip || getFileUrl(module.slug, module.latest_version, "bundle.zip"),
+      // Agent-generated fields (if Webflow schema supports them)
+      ...(module.meta_title && { "meta-title": module.meta_title }),
+      ...(module.meta_description && { "meta-description": module.meta_description }),
+      ...(module.seo_keywords && { "seo-keywords": module.seo_keywords.join(", ") }),
+      ...(module.summary_short && { "summary-short": module.summary_short }),
+      ...(module.summary_medium && { "summary-medium": module.summary_medium }),
+      ...(module.summary_long && { "summary-long": module.summary_long }),
+      ...(module.image_prompt && { "image-prompt": module.image_prompt }),
+      ...(module.schema_json && { "schema-json": JSON.stringify(module.schema_json) }),
+      ...(module.quality_score && { "quality-score": module.quality_score }),
     },
   };
 }

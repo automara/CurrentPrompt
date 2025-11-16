@@ -14,8 +14,19 @@ export async function createModule(
   sourceUrl?: string,
   sourceLabel?: string,
   status: "draft" | "published" | "archived" = "draft",
-  owner: string = "Keith Armstrong",
-  metaDescription?: string
+  agentFields?: {
+    meta_title?: string;
+    meta_description?: string;
+    seo_keywords?: string[];
+    summary_short?: string;
+    summary_medium?: string;
+    summary_long?: string;
+    image_prompt?: string;
+    schema_json?: object;
+    quality_score?: number;
+    validation_report?: string;
+  },
+  owner: string = "Keith Armstrong"
 ): Promise<Module | null> {
   try {
     const { data, error } = await supabase
@@ -27,12 +38,13 @@ export async function createModule(
           category,
           tags,
           summary,
-          meta_description: metaDescription,
           source_url: sourceUrl,
           source_label: sourceLabel,
           owner,
           latest_version: 1,
           status,
+          // Agent-generated fields
+          ...(agentFields || {})
         },
       ])
       .select()
@@ -306,5 +318,28 @@ export async function getLatestModuleVersion(
   } catch (error) {
     console.error("Error fetching latest module version:", error);
     return null;
+  }
+}
+
+// Create module embedding
+export async function createModuleEmbedding(
+  moduleId: string,
+  embedding: number[]
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from("module_embeddings")
+      .insert([
+        {
+          module_id: moduleId,
+          embedding
+        }
+      ]);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error("Error creating module embedding:", error);
+    return false;
   }
 }
