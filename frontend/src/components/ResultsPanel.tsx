@@ -84,10 +84,10 @@ export function ResultsPanel({ testResults, createResults }: ResultsPanelProps) 
               AI agent analysis complete
             </CardDescription>
           </div>
-          {testResults.processingTime && (
+          {testResults!.processingTime && (
             <Badge variant="outline" className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              {(testResults.processingTime / 1000).toFixed(2)}s
+              {(testResults!.processingTime / 1000).toFixed(2)}s
             </Badge>
           )}
         </div>
