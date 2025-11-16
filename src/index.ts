@@ -3,11 +3,12 @@ import cors from "cors";
 import multer from "multer";
 import { config } from "dotenv";
 import modulesRouter from "./routes/modules.js";
+import { initializeStorageBucket } from "./services/storageService.js";
 
 config();
 
 const app = express();
-const PORT = process.env.API_PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
@@ -49,11 +50,24 @@ app.use((req, res) => {
   res.status(404).json({ success: false, error: "Endpoint not found" });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`✓ CurrentPrompt API v2.0 running on http://localhost:${PORT}`);
-  console.log(`✓ Architecture: Webflow-first automation pipeline`);
-  console.log(`✓ Environment: ${process.env.NODE_ENV || "development"}`);
-});
+// Initialize storage and start server
+async function startServer() {
+  try {
+    // Initialize Supabase Storage bucket
+    await initializeStorageBucket();
+    console.log('✓ Supabase Storage initialized');
+
+    app.listen(PORT, () => {
+      console.log(`✓ CurrentPrompt API v2.0 running on http://localhost:${PORT}`);
+      console.log(`✓ Architecture: Webflow-first automation pipeline`);
+      console.log(`✓ Environment: ${process.env.NODE_ENV || "development"}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 export default app;

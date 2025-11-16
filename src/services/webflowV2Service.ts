@@ -1,4 +1,5 @@
 import { Module } from "../lib/supabase.js";
+import { getLatestModuleVersion } from "./moduleService.js";
 
 /**
  * Webflow V2 Service - Sync modules to Webflow using v2 Data API
@@ -29,7 +30,7 @@ export async function syncModuleToWebflowV2(module: Module): Promise<boolean> {
     // Check if item already exists
     const existingItem = await findWebflowItemByFieldV2("supabase-id", module.id);
 
-    const itemData = buildWebflowItemData(module);
+    const itemData = await buildWebflowItemData(module);
 
     if (existingItem) {
       // Update existing item
@@ -50,11 +51,15 @@ export async function syncModuleToWebflowV2(module: Module): Promise<boolean> {
  * Example: category: "Dev Tool" or tags: "ai; claude; productivity"
  * status is mapped to Webflow option IDs
  */
-function buildWebflowItemData(module: Module) {
+async function buildWebflowItemData(module: Module) {
   // Map status to Webflow option IDs
   const statusId = module.status === "published"
     ? "ee61f17366fc7f58f282042e1bf44125"
     : "e9c64fa914d619f54a019c8fb7463f83";
+
+  // Get latest version file paths from database
+  const latestVersion = await getLatestModuleVersion(module.id);
+  const filePaths = latestVersion?.file_paths as any || {};
 
   return {
     fieldData: {
@@ -69,9 +74,9 @@ function buildWebflowItemData(module: Module) {
       "source-label": module.source_label || "",
       "supabase-id": module.id,
       // owner field doesn't exist in Webflow schema
-      "download-link-full": getFileUrl(module.slug, module.latest_version, "full.md"),
-      "download-link-summary": getFileUrl(module.slug, module.latest_version, "summary.md"),
-      "download-link-bundle": getFileUrl(module.slug, module.latest_version, "bundle.zip"),
+      "download-link-full": filePaths.full_md || getFileUrl(module.slug, module.latest_version, "full.md"),
+      "download-link-summary": filePaths.summary_md || getFileUrl(module.slug, module.latest_version, "summary.md"),
+      "download-link-bundle": filePaths.bundle_zip || getFileUrl(module.slug, module.latest_version, "bundle.zip"),
     },
   };
 }
