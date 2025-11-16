@@ -1,19 +1,59 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import multer from "multer";
 import { config } from "dotenv";
 import modulesRouter from "./routes/modules.js";
 import testAgentsRouter from "./routes/test-agents.js";
 import { initializeStorageBucket } from "./services/storageService.js";
+import { apiLimiter } from "./middleware/rateLimit.js";
 
 config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Security: Helmet - Sets various HTTP headers for security
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
+
+// CORS Configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",")
+  : ["http://localhost:3000", "http://localhost:5173"]; // Default for development
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+        callback(null, true);
+      } else {
+        console.warn(`CORS blocked origin: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    optionsSuccessStatus: 200,
+  })
+);
+
+// Body parsing with size limits
+app.use(express.json({ limit: "2mb" })); // 2MB limit for JSON payloads
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
+
+// Rate limiting - Apply to all routes
+app.use(apiLimiter);
 
 // Configure multer for file uploads
 const upload = multer({
