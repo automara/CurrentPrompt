@@ -2,7 +2,9 @@
 
 **Date:** 2025-11-15
 **Branch:** `automara/mastra-content-gen`
-**Status:** ✅ Complete and ready for testing
+**Status:** ✅ Deployed to Railway - Debugging Supabase Storage Issue
+
+**Latest Update:** Enhanced error logging added (commit 9b41c39) to diagnose storage upload failures
 
 ---
 
