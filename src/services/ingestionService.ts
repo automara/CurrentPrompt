@@ -25,6 +25,7 @@ interface ProcessedModule {
 
 /**
  * Process a markdown file through the complete ingestion pipeline
+ * @deprecated Use processMarkdownContent instead for better Railway compatibility
  */
 export async function processMarkdownFile(
   filePath: string,
@@ -33,11 +34,40 @@ export async function processMarkdownFile(
   try {
     console.log(`📝 Processing markdown file: ${filePath}`);
 
-    // Step 1: Read the file
+    // Read the file
     const content = await fs.readFile(filePath, "utf-8");
 
+    // Extract title from filename
+    const filename = path.basename(filePath, ".md");
+    const title = filename
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+    // Delegate to content-based processor
+    return await processMarkdownContent(content, title, autoSync);
+  } catch (error) {
+    console.error("Error processing markdown file:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Process markdown content through the complete ingestion pipeline
+ */
+export async function processMarkdownContent(
+  content: string,
+  title?: string,
+  autoSync = true
+): Promise<{ success: boolean; moduleId?: string; error?: string }> {
+  try {
+    console.log(`📝 Processing markdown content: ${title || 'Untitled'}`);
+
     // Step 2: Clean and extract metadata with AI Agents
-    const processed = await cleanAndExtractMetadata(content, filePath);
+    const processed = await cleanAndExtractMetadata(content, title);
     const { agentResults } = processed;
 
     // Step 3: Create module in Supabase with all agent-generated fields
@@ -132,20 +162,18 @@ export async function processMarkdownFile(
  */
 async function cleanAndExtractMetadata(
   content: string,
-  filePath: string
+  providedTitle?: string
 ): Promise<ProcessedModule & { agentResults: any }> {
-  const filename = path.basename(filePath, ".md");
   const lines = content.split("\n");
 
-  // Extract initial title (first H1 or filename)
-  let initialTitle = filename
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  // Extract initial title (from parameter, first H1, or default)
+  let initialTitle = providedTitle || "Untitled Module";
 
-  const firstH1 = lines.find((line) => line.startsWith("# "));
-  if (firstH1) {
-    initialTitle = firstH1.replace("# ", "").trim();
+  if (!providedTitle) {
+    const firstH1 = lines.find((line) => line.startsWith("# "));
+    if (firstH1) {
+      initialTitle = firstH1.replace("# ", "").trim();
+    }
   }
 
   console.log(`🤖 Using AI Agent Workflow to process: ${initialTitle}`);

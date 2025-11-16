@@ -5,7 +5,13 @@ import { processMarkdownFile } from "./ingestionService.js";
 /**
  * Folder Watcher Service - Monitor a folder for new markdown files
  *
- * When a new .md file is detected, automatically trigger the ingestion pipeline
+ * NOTE: This service is OPTIONAL and only useful for local development.
+ * On Railway or serverless platforms, use the JSON API instead (POST /api/modules/create).
+ *
+ * When a new .md file is detected, automatically trigger the ingestion pipeline.
+ * Run with: npm run watch
+ *
+ * @deprecated Prefer using the JSON API for production deployments
  */
 
 const WATCH_FOLDER = process.env.WATCH_FOLDER || "./uploads";
