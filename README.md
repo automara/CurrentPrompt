@@ -12,6 +12,8 @@ Automated markdown module publishing system with Webflow CMS integration. Drop a
 - **[PROJECT.md](./PROJECT.md)** - Full architecture and vision
 
 ### Install & Run
+
+**Backend:**
 ```bash
 npm install
 npm run build
@@ -24,6 +26,21 @@ npm run watch
 ```
 
 The API runs on `http://localhost:3000`
+
+**Admin Testing Portal:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The admin UI runs on `http://localhost:5173`
+
+- Password-protected testing interface
+- Upload markdown via drag & drop or paste
+- Toggle between "Test Only" and "Save to DB" modes
+- View detailed AI agent results with quality scores
+- See [frontend/README.md](./frontend/README.md) for details
 
 ## What is CurrentPrompt?
 
@@ -64,7 +81,8 @@ CurrentPrompt is Keith's personal knowledge base - an automated publishing syste
 | Project Overview | [PROJECT.md](./PROJECT.md) |
 | AI Agents Guide | [AGENTS_README.md](./AGENTS_README.md) |
 | Agent Testing | [TESTING.md](./TESTING.md) |
-| Railway Deployment | [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md) |
+| Admin Portal | [frontend/README.md](./frontend/README.md) |
+| Railway Deployment | [RAILWAY_SETUP.md](./RAILWAY_SETUP.md) |
 | Webflow Configuration | [docs/WEBFLOW_SETUP.md](./docs/WEBFLOW_SETUP.md) |
 | Sample Data | [data/](./data/) |
 
@@ -98,7 +116,7 @@ GET    /                          # API info
 
 ## 🛠️ Tech Stack
 
-- **Frontend/CMS:** Webflow (primary interface)
+- **Frontend/CMS:** Webflow (primary interface) + React Admin Portal (testing)
 - **Backend:** Node.js + Express + TypeScript
 - **Database:** Supabase (PostgreSQL with pgvector)
 - **Storage:** Supabase Storage (S3-backed)
@@ -107,6 +125,7 @@ GET    /                          # API info
 - **Embeddings:** OpenAI text-embedding-3-large
 - **Images:** fal.ai (thumbnail generation)
 - **File Watching:** chokidar
+- **Admin UI:** React + TypeScript + Vite + ShadCN + Tailwind
 - **Deployment:** Railway
 
 ## 🔄 Data Flow

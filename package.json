@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "node --loader ts-node/esm src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "build": "tsc && npm run build:frontend",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "start": "NODE_ENV=production node dist/index.js",
     "watch": "node dist/watcher.js",
     "test": "jest",
     "test:env": "node --loader ts-node/esm tests/setup.ts",

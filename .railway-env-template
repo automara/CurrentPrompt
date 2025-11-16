@@ -1,0 +1,19 @@
+# Copy these to Railway environment variables
+# Railway Dashboard → Your Project → Variables
+
+# === REQUIRED ===
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+OPENAI_API_KEY=
+OPENROUTER_API_KEY=
+VITE_ADMIN_PASSWORD=
+NODE_ENV=production
+
+# === OPTIONAL ===
+# WEBFLOW_API_TOKEN=
+# WEBFLOW_SITE_ID=
+# WEBFLOW_COLLECTION_ID=
+# FAL_API_KEY=
+# API_KEY=
+# ALLOWED_ORIGINS=

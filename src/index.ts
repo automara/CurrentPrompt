@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import multer from "multer";
+import path from "path";
+import { fileURLToPath } from "url";
 import { config } from "dotenv";
 import modulesRouter from "./routes/modules.js";
 import testAgentsRouter from "./routes/test-agents.js";
@@ -9,6 +11,9 @@ import { initializeStorageBucket } from "./services/storageService.js";
 import { apiLimiter } from "./middleware/rateLimit.js";
 
 config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -70,41 +75,56 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Root endpoint
-app.get("/", (req, res) => {
-  res.json({
-    name: "CurrentPrompt API",
-    version: "2.0.0",
-    description:
-      "Automated markdown module publishing system with Webflow CMS integration",
-    architecture: "Webflow-first",
-    endpoints: {
-      modules: "/api/modules",
-      create: "/api/modules/create (POST JSON - recommended)",
-      upload: "/api/modules/upload (POST file - deprecated)",
-      sync: "/api/modules/sync/:id",
-      testAgents: "/api/test-agents",
-      agentHealth: "/api/test-agents/health",
-      health: "/health",
-    },
-    usage: {
-      createModule: {
-        method: "POST",
-        endpoint: "/api/modules/create",
-        body: {
-          title: "Optional - extracted from H1 if not provided",
-          content: "Required - markdown string",
-          autoSync: "Optional - default true",
+// Serve static files from frontend build in production
+const frontendDistPath = path.join(__dirname, "../frontend/dist");
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(frontendDistPath));
+
+  // SPA fallback - serve index.html for all non-API routes
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(frontendDistPath, "index.html"));
+  });
+} else {
+  // Development mode - show API documentation
+  app.get("/", (req, res) => {
+    res.json({
+      name: "CurrentPrompt API",
+      version: "2.0.0",
+      description:
+        "Automated markdown module publishing system with Webflow CMS integration",
+      architecture: "Webflow-first",
+      endpoints: {
+        modules: "/api/modules",
+        create: "/api/modules/create (POST JSON - recommended)",
+        upload: "/api/modules/upload (POST file - deprecated)",
+        sync: "/api/modules/sync/:id",
+        testAgents: "/api/test-agents",
+        agentHealth: "/api/test-agents/health",
+        health: "/health",
+      },
+      usage: {
+        createModule: {
+          method: "POST",
+          endpoint: "/api/modules/create",
+          body: {
+            title: "Optional - extracted from H1 if not provided",
+            content: "Required - markdown string",
+            autoSync: "Optional - default true",
+          },
         },
       },
-    },
+      frontend: {
+        development: "Run 'npm run dev' in frontend/ directory",
+        url: "http://localhost:5173"
+      }
+    });
   });
-});
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ success: false, error: "Endpoint not found" });
-});
+  // 404 handler for development
+  app.use((req, res) => {
+    res.status(404).json({ success: false, error: "Endpoint not found" });
+  });
+}
 
 // Initialize storage and start server
 async function startServer() {
