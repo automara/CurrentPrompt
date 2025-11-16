@@ -72,7 +72,8 @@ CurrentPrompt is Keith's personal knowledge base - an automated publishing syste
 
 ### Upload & Sync
 ```
-POST   /api/modules/upload        # Upload markdown file
+POST   /api/modules/create        # Create module from JSON (recommended)
+POST   /api/modules/upload        # Upload markdown file (deprecated)
 POST   /api/modules/sync/:id      # Sync module to Webflow
 POST   /api/modules/sync-all      # Sync all modules
 ```
@@ -111,11 +112,9 @@ GET    /                          # API info
 ## 🔄 Data Flow
 
 ```
-Local Folder (~/uploads/*.md)
+JSON API Request (markdown content)
     ↓
-Folder Watcher (chokidar) OR Upload API
-    ↓
-Ingestion Service
+Ingestion Service (AI agent processing)
     ↓
 7 AI Agents (OpenRouter + Mastra)
 ├── Phase 1 (Parallel): Summary, SEO, Category, Tags
@@ -129,6 +128,9 @@ fal.ai (thumbnail generation)
 REST API (sync)
     ↓
 Webflow CMS (draft status for review)
+
+Alternative (local dev):
+Local Folder (~/uploads/*.md) → Folder Watcher → Same flow as above
 ```
 
 ## 📖 How to Use
@@ -179,14 +181,24 @@ npm run watch
 
 ### 4. Upload Modules
 
-**Via Folder Watcher:**
+**Recommended: JSON API** (works on Railway)
+```bash
+curl -X POST http://localhost:3000/api/modules/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "My Module Title",
+    "content": "# My Module\n\nMarkdown content here..."
+  }'
+```
+
+**Optional: Via Folder Watcher** (local development only)
 ```bash
 # Drop a markdown file in the uploads folder
 cp my-module.md uploads/
 # Watcher automatically processes it
 ```
 
-**Via API:**
+**Deprecated: File Upload API**
 ```bash
 curl -X POST http://localhost:3000/api/modules/upload \
   -F "file=@my-module.md"

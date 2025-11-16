@@ -40,11 +40,23 @@ app.get("/", (req, res) => {
     architecture: "Webflow-first",
     endpoints: {
       modules: "/api/modules",
-      upload: "/api/modules/upload",
+      create: "/api/modules/create (POST JSON - recommended)",
+      upload: "/api/modules/upload (POST file - deprecated)",
       sync: "/api/modules/sync/:id",
       testAgents: "/api/test-agents",
       agentHealth: "/api/test-agents/health",
       health: "/health",
+    },
+    usage: {
+      createModule: {
+        method: "POST",
+        endpoint: "/api/modules/create",
+        body: {
+          title: "Optional - extracted from H1 if not provided",
+          content: "Required - markdown string",
+          autoSync: "Optional - default true",
+        },
+      },
     },
   });
 });
