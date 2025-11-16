@@ -65,6 +65,9 @@ export async function uploadMarkdownFile(
     const path = `${slug}/v${version}/${filename}`;
     const buffer = Buffer.from(content, 'utf-8');
 
+    console.log(`🔄 Attempting upload: ${filename} (${buffer.length} bytes) to path: ${path}`);
+    console.log(`📦 Bucket: ${STORAGE_BUCKET}, ContentType: text/markdown`);
+
     const { data, error } = await supabase.storage
       .from(STORAGE_BUCKET)
       .upload(path, buffer, {
@@ -73,9 +76,14 @@ export async function uploadMarkdownFile(
       });
 
     if (error) {
-      console.error(`Error uploading ${filename}:`, error);
+      console.error(`❌ Upload FAILED for ${filename}:`);
+      console.error(`   Error message: ${error.message}`);
+      console.error(`   Error name: ${error.name}`);
+      console.error(`   Full error:`, JSON.stringify(error, null, 2));
       return null;
     }
+
+    console.log(`✅ Upload response data:`, JSON.stringify(data, null, 2));
 
     // Get public URL
     const { data: urlData } = supabase.storage
@@ -86,7 +94,11 @@ export async function uploadMarkdownFile(
 
     return urlData.publicUrl;
   } catch (error) {
-    console.error('Error in uploadMarkdownFile:', error);
+    console.error(`❌ EXCEPTION in uploadMarkdownFile for ${filename}:`);
+    console.error(`   Error:`, error);
+    if (error instanceof Error) {
+      console.error(`   Stack:`, error.stack);
+    }
     return null;
   }
 }
@@ -102,6 +114,9 @@ export async function uploadZipBundle(
   try {
     const path = `${slug}/v${version}/bundle.zip`;
 
+    console.log(`🔄 Attempting ZIP upload: (${zipBuffer.length} bytes) to path: ${path}`);
+    console.log(`📦 Bucket: ${STORAGE_BUCKET}, ContentType: application/zip`);
+
     const { data, error } = await supabase.storage
       .from(STORAGE_BUCKET)
       .upload(path, zipBuffer, {
@@ -110,9 +125,14 @@ export async function uploadZipBundle(
       });
 
     if (error) {
-      console.error('Error uploading ZIP bundle:', error);
+      console.error(`❌ ZIP Upload FAILED:`);
+      console.error(`   Error message: ${error.message}`);
+      console.error(`   Error name: ${error.name}`);
+      console.error(`   Full error:`, JSON.stringify(error, null, 2));
       return null;
     }
+
+    console.log(`✅ ZIP Upload response data:`, JSON.stringify(data, null, 2));
 
     const { data: urlData } = supabase.storage
       .from(STORAGE_BUCKET)
@@ -122,7 +142,11 @@ export async function uploadZipBundle(
 
     return urlData.publicUrl;
   } catch (error) {
-    console.error('Error in uploadZipBundle:', error);
+    console.error(`❌ EXCEPTION in uploadZipBundle:`);
+    console.error(`   Error:`, error);
+    if (error instanceof Error) {
+      console.error(`   Stack:`, error.stack);
+    }
     return null;
   }
 }
@@ -193,31 +217,66 @@ export async function uploadModuleFiles(
   bundle_zip?: string;
 }> {
   console.log(`📤 Uploading files to Supabase Storage...`);
+  console.log(`   Slug: ${slug}, Version: ${version}`);
+  console.log(`   Full content length: ${fullContent.length} chars`);
+  console.log(`   Summary content length: ${summaryContent.length} chars`);
 
-  // Upload full markdown
-  const fullUrl = await uploadMarkdownFile(slug, version, 'full.md', fullContent);
+  try {
+    // Upload full markdown
+    console.log(`\n🔵 Starting full.md upload...`);
+    const fullUrl = await uploadMarkdownFile(slug, version, 'full.md', fullContent);
+    console.log(`   Result: ${fullUrl ? '✅ SUCCESS' : '❌ FAILED'}`);
 
-  // Upload summary markdown
-  const summaryUrl = await uploadMarkdownFile(
-    slug,
-    version,
-    'summary.md',
-    summaryContent
-  );
+    // Upload summary markdown
+    console.log(`\n🔵 Starting summary.md upload...`);
+    const summaryUrl = await uploadMarkdownFile(
+      slug,
+      version,
+      'summary.md',
+      summaryContent
+    );
+    console.log(`   Result: ${summaryUrl ? '✅ SUCCESS' : '❌ FAILED'}`);
 
-  // Create and upload ZIP bundle
-  const zipBuffer = await createZipBundle(fullContent, summaryContent, slug);
-  const zipUrl = await uploadZipBundle(slug, version, zipBuffer);
+    // Create and upload ZIP bundle
+    console.log(`\n🔵 Creating ZIP bundle...`);
+    const zipBuffer = await createZipBundle(fullContent, summaryContent, slug);
+    console.log(`   ZIP buffer created: ${zipBuffer.length} bytes`);
 
-  const result = {
-    full_md: fullUrl || undefined,
-    summary_md: summaryUrl || undefined,
-    bundle_zip: zipUrl || undefined,
-  };
+    console.log(`🔵 Starting bundle.zip upload...`);
+    const zipUrl = await uploadZipBundle(slug, version, zipBuffer);
+    console.log(`   Result: ${zipUrl ? '✅ SUCCESS' : '❌ FAILED'}`);
 
-  console.log(`✓ Uploaded ${Object.values(result).filter(Boolean).length}/3 files`);
+    const result = {
+      full_md: fullUrl || undefined,
+      summary_md: summaryUrl || undefined,
+      bundle_zip: zipUrl || undefined,
+    };
 
-  return result;
+    const successCount = Object.values(result).filter(Boolean).length;
+    console.log(`\n✓ Upload summary: ${successCount}/3 files uploaded successfully`);
+
+    if (successCount < 3) {
+      console.error(`⚠️  WARNING: Only ${successCount}/3 files uploaded!`);
+      console.error(`   full_md: ${result.full_md ? '✅' : '❌'}`);
+      console.error(`   summary_md: ${result.summary_md ? '✅' : '❌'}`);
+      console.error(`   bundle_zip: ${result.bundle_zip ? '✅' : '❌'}`);
+    }
+
+    return result;
+  } catch (error) {
+    console.error(`❌ CRITICAL ERROR in uploadModuleFiles:`);
+    console.error(`   Error:`, error);
+    if (error instanceof Error) {
+      console.error(`   Stack:`, error.stack);
+    }
+
+    // Return empty result on critical error
+    return {
+      full_md: undefined,
+      summary_md: undefined,
+      bundle_zip: undefined,
+    };
+  }
 }
 
 /**
